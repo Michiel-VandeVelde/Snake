@@ -10,12 +10,15 @@
   const overlayText = document.querySelector('#overlayText');
   const startButton = document.querySelector('#startButton');
   const soundButton = document.querySelector('#soundButton');
+  const difficultySelect = document.querySelector('#difficulty');
 
   const cells = 20;
   const cell = canvas.width / cells;
   const vectors = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
   const keyMap = { ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right' };
-  let snake, direction, queuedDirection, food, score, running=false, paused=false, timer, audioOn=true, touchStart;
+  const baseSpeeds = { relaxed:175, classic:140, turbo:105 };
+  let snake, direction, queuedDirection, food, bonusFood, bonusTicks, apples, score;
+  let running=false, paused=false, timer, audioOn=true, touchStart, currentDifficulty='classic';
   let best = Number(localStorage.getItem('neonSnakeBest')) || 0;
   bestEl.textContent = String(best).padStart(3,'0');
 
@@ -24,15 +27,29 @@
     direction = vectors.right;
     queuedDirection = direction;
     score = 0;
+    apples = 0;
+    bonusFood = null;
+    bonusTicks = 0;
     placeFood();
     updateStats();
     draw();
   }
 
-  function placeFood() {
+  function randomOpenCell(excluded=[]) {
     const open=[];
-    for(let y=0;y<cells;y++) for(let x=0;x<cells;x++) if(!snake.some(p=>p.x===x&&p.y===y)) open.push({x,y});
-    food = open[Math.floor(Math.random()*open.length)];
+    for(let y=0;y<cells;y++) for(let x=0;x<cells;x++) {
+      const occupied=snake.some(p=>p.x===x&&p.y===y)||excluded.some(p=>p&&p.x===x&&p.y===y);
+      if(!occupied) open.push({x,y});
+    }
+    return open[Math.floor(Math.random()*open.length)];
+  }
+
+  function placeFood() { food = randomOpenCell([bonusFood]); }
+
+  function placeBonusFood() {
+    bonusFood = randomOpenCell([food]);
+    bonusTicks = 45;
+    beep(760,.09);
   }
 
   function updateStats() {
@@ -41,12 +58,16 @@
     bestEl.textContent = String(best).padStart(3,'0');
   }
 
-  function speed() { return Math.max(65,140-Math.floor(score/50)*12); }
+  function speed() {
+    return Math.max(55,baseSpeeds[currentDifficulty]-Math.floor(score/50)*12);
+  }
 
   function start() {
     clearTimeout(timer);
+    currentDifficulty=difficultySelect.value;
     reset();
     running=true; paused=false;
+    difficultySelect.disabled=true;
     overlay.classList.add('hidden');
     schedule();
   }
@@ -57,17 +78,34 @@
     direction=queuedDirection;
     const head={x:snake[0].x+direction.x,y:snake[0].y+direction.y};
     const hitWall=head.x<0||head.x>=cells||head.y<0||head.y>=cells;
-    const eating=head.x===food.x&&head.y===food.y;
+    const eatingFood=head.x===food.x&&head.y===food.y;
+    const eatingBonus=bonusFood&&head.x===bonusFood.x&&head.y===bonusFood.y;
+    const eating=eatingFood||eatingBonus;
     const body=eating?snake:snake.slice(0,-1);
     if(hitWall||body.some(p=>p.x===head.x&&p.y===head.y)) return endGame();
     snake.unshift(head);
-    if(eating){ score+=10; beep(560,.07); if(score>best){best=score;localStorage.setItem('neonSnakeBest',best);} placeFood(); updateStats(); }
-    else snake.pop();
+    if(eatingFood){
+      score+=10;
+      apples+=1;
+      beep(560,.07);
+      placeFood();
+      if(apples%5===0) placeBonusFood();
+    } else if(eatingBonus) {
+      score+=30;
+      bonusFood=null;
+      bonusTicks=0;
+      beep(920,.12);
+    } else {
+      snake.pop();
+    }
+    if(bonusFood&&!eatingBonus&&--bonusTicks<=0) bonusFood=null;
+    if(score>best){best=score;localStorage.setItem('neonSnakeBest',best);}
+    updateStats();
     draw(); schedule();
   }
 
   function endGame() {
-    running=false; clearTimeout(timer); beep(120,.2);
+    running=false; clearTimeout(timer); difficultySelect.disabled=false; beep(120,.2);
     overlayTitle.textContent='Game over';
     overlayText.textContent=`You scored ${score}. Your best is ${best}.`;
     startButton.textContent='Play again';
@@ -94,6 +132,12 @@
       const x=food.x*cell+cell/2,y=food.y*cell+cell/2;
       ctx.shadowColor='#ff557d';ctx.shadowBlur=16;ctx.fillStyle='#ff557d';ctx.beginPath();ctx.arc(x,y,cell*.31,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
       ctx.fillStyle='#8cff6a';ctx.fillRect(x+1,y-cell*.42,2,6);
+    }
+    if(bonusFood){
+      const x=bonusFood.x*cell+cell/2,y=bonusFood.y*cell+cell/2;
+      const pulse=1+Math.sin(Date.now()/100)*.1;
+      ctx.shadowColor='#ffd84a';ctx.shadowBlur=20;ctx.fillStyle='#ffd84a';ctx.beginPath();ctx.arc(x,y,cell*.34*pulse,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      ctx.fillStyle='#7a4d00';ctx.font='bold 12px ui-monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('★',x,y+1);
     }
     snake.forEach((p,i)=>{
       const pad=i===0?1.5:2.5;
@@ -126,6 +170,6 @@
   canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY};});
   canvas.addEventListener('pointerup',e=>{if(!touchStart)return;const dx=e.clientX-touchStart.x,dy=e.clientY-touchStart.y;if(Math.max(Math.abs(dx),Math.abs(dy))>18)setDirection(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));touchStart=null;});
   startButton.addEventListener('click',()=>paused?togglePause():start());
-  soundButton.addEventListener('click',()=>{audioOn=!audioOn;soundButton.textContent=audioOn?'♪':'×';soundButton.setAttribute('aria-label',audioOn?'Mute sound':'Enable sound');});
+  soundButton.addEventListener('click',()=>{audioOn=!audioOn;soundButton.textContent=audioOn?'♪':'×';soundButton.setAttribute('aria-label',audioOn?'Mute sound':'Enable sound');soundButton.setAttribute('aria-pressed',String(!audioOn));});
   reset();
 })();

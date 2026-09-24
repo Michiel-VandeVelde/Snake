@@ -14,7 +14,17 @@
         <p class="eyebrow">ARCADE CLASSIC</p>
         <h1>NEON <span>SNAKE</span></h1>
       </div>
-      <button id="soundButton" class="icon-button" type="button" aria-label="Toggle sound">♪</button>
+      <div class="header-actions">
+        <label class="difficulty">
+          <span>Speed</span>
+          <select id="difficulty" aria-label="Game speed">
+            <option value="relaxed">Relaxed</option>
+            <option value="classic" selected>Classic</option>
+            <option value="turbo">Turbo</option>
+          </select>
+        </label>
+        <button id="soundButton" class="icon-button" type="button" aria-label="Mute sound" aria-pressed="false">♪</button>
+      </div>
     </header>
 
     <section class="scoreboard" aria-label="Game statistics">
@@ -28,7 +38,7 @@
       <div id="overlay" class="overlay">
         <div class="snake-mark" aria-hidden="true">S</div>
         <h2 id="overlayTitle">Ready?</h2>
-        <p id="overlayText">Use arrow keys, WASD, or swipe to move.</p>
+        <p id="overlayText">Use arrow keys, WASD, or swipe to move. Every fifth snack spawns a golden bonus.</p>
         <button id="startButton" type="button">Start game</button>
       </div>
     </section>
