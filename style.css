@@ -3,7 +3,12 @@
 body { margin:0; min-height:100vh; display:grid; place-items:center; background:radial-gradient(circle at 50% 10%,#17382d 0,#081712 38%,#030806 100%); color:#f4fff8; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
 body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.08; background:repeating-linear-gradient(0deg,transparent 0 3px,#fff 4px); }
 .game-shell { width:min(92vw,520px); padding:28px; border:1px solid #234d3d; border-radius:24px; background:linear-gradient(145deg,rgba(15,36,28,.96),rgba(5,13,10,.98)); box-shadow:0 30px 90px #000b,0 0 60px #32ff8812,inset 0 1px #ffffff10; }
-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.header-actions { display:flex; align-items:center; gap:10px; }
+.difficulty { display:grid; gap:3px; color:var(--muted); font-size:.58rem; text-transform:uppercase; letter-spacing:.12em; }
+.difficulty select { min-width:92px; padding:7px 9px; border:1px solid #38634f; border-radius:8px; background:#10281e; color:#eafff1; font:700 .72rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+.difficulty select:focus-visible { border-color:var(--lime); outline:none; box-shadow:0 0 18px #b8ff3d22; }
+.difficulty select:disabled { opacity:.55; cursor:not-allowed; }
 .eyebrow { margin:0 0 4px; color:var(--green); font-size:.67rem; letter-spacing:.35em; }
 h1 { margin:0; font:900 clamp(1.8rem,7vw,3rem)/.9 system-ui,sans-serif; letter-spacing:-.06em; }
 h1 span { color:var(--lime); text-shadow:0 0 22px #b8ff3d66; }
@@ -30,4 +35,4 @@ canvas { display:block; width:100%; height:auto; touch-action:none; background:#
 .hint { margin:16px 0 0; text-align:center; color:#698278; font-size:.68rem; }
 kbd { padding:2px 5px; border:1px solid #315344; border-radius:4px; color:#a9c2b8; background:#0b1914; }
 @media (pointer:coarse),(max-width:650px) { .game-shell{padding:18px}.controls{display:grid}.hint{display:none} }
-@media (max-width:400px) { .scoreboard div{padding:10px}.game-shell{width:96vw;border-radius:18px} }
+@media (max-width:460px) { header{align-items:flex-start}.header-actions{align-items:flex-end;flex-direction:column-reverse;gap:6px}.difficulty{justify-items:end}.scoreboard div{padding:10px}.game-shell{width:96vw;border-radius:18px} }
